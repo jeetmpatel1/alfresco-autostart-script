@@ -63,3 +63,38 @@ isClamdRunning()
 	   return 1
 	fi
 }
+
+isTomcatRunning()
+{
+	netstat -tupln | grep 8080 > $tmp_netstat
+	more $tmp_netstat | awk '{print $7}'  | cut -c1-5
+	if [[ -s $tmp_netstat ]]
+	then
+		return 0
+	else
+		#remove file
+		rm $tmp_netstat
+		return 1
+	fi  
+
+}
+
+## function to validate if mount is mapped,this should be changed across host
+isMountOK()
+{
+   logger "mount to check "$MOUNTVALUE
+   if grep -qs $MOUNTVALUE /proc/mounts; then
+		return 0
+	else
+		return 1
+	fi
+}
+## function to rename catalina.out on every restart
+renameCatalina()
+{
+   file_name=$alfrescoHomePath/tomcat/logs/catalina.out
+   stamp=$(date "+%Y-%m-%d_%H%M%S")
+   new_filename=$file_name.$stamp
+   mv $file_name $new_filename
+}
+## get alfresco version running
