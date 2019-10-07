@@ -42,6 +42,15 @@ Logfile=$LogDir/autoscript_$DATE.log
 major_version=$(rpm -q --queryformat '%{RELEASE}' rpm | grep -o [[:digit:]]*\$)
 actualAlfrescoRunning=$(ps -elf | grep java | grep /tomcat/bin | awk '{print $15}')
 
+## Mail related properties
+mailTO="jeet.mpatel1@gmail.com,jmpatel@scu.edu"
+emailBodyClamdMountFail="FYI\nProcess either 'clamd' or necessary 'mount' failed for host "$(hostname)".\nPlease validate with unix team and take necessary actions,script execution exited with no further action." 
+emailBodyOtherAlfrescoProcessDetected="FYI\n\nScript detected that for host "$(hostname)" defined alfresco version and actual running alfresco are different, please cross check manually and perform appropriate actions\n,Script exited with no further action."
+httpdFailMsg="FYI\n\nScript from host "$(hostname)" detected that it is not able to up 'LLAWP' or 'httpd' properly, please validate manually\n,Script exited with no further action."
+alfrescoStartedMsg="FYI\n\nAlfresco application for host "$(hostname)" initial started with LLAWP (apache httpd) process.\nThis is script generated email please do not reply back.\n\nAny error message you received while starting alfresco will be there in subsequent email please validate from your end."
+alfrescoStartFailedMsg="FYI\n\nAlfresco application for host "$(hostname)" failed to start please validate host alfresco manually."
+alfrescoFailStartCurlMsg="FYI\n\nAlfresco application for host "$(hostname)" started but application failed to get response, please validate host manually."
+alfrescoSuccessStartCurlMsg="FYI\n\nAlfresco application for host "$(hostname)" started successfully, validated via curl."
 isLLAWPRunning()
 {
 	SERVICE='LLAWP'
