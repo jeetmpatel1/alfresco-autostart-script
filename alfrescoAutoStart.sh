@@ -9,7 +9,7 @@
 alfrescoHomePath=/opt/alfresco-installation/alfresco-5.2.1
 
 #Mount point of Alfresco 
-MOUNTVALUE=/nas/alf20qa
+MOUNTVALUE=/nas/alf20
 
 
 ## VARIABLES
@@ -41,3 +41,25 @@ Logfile=$LogDir/autoscript_$DATE.log
 ## Getting RedHat OS version 6 or 7. Clamd has issues specific to RHEL7. That's why we need this.
 major_version=$(rpm -q --queryformat '%{RELEASE}' rpm | grep -o [[:digit:]]*\$)
 actualAlfrescoRunning=$(ps -elf | grep java | grep /tomcat/bin | awk '{print $15}')
+
+isLLAWPRunning()
+{
+	SERVICE='LLAWP'
+	if ps ax | grep $SERVICE | grep -v grep > /dev/null
+	then
+	   return 0
+	else
+	   return 1
+	fi
+}
+
+isClamdRunning()
+{
+	SERVICE='clamd'
+	if ps ax | grep $SERVICE | grep -v grep  > /dev/null
+	then
+	   return 0
+	else
+	   return 1
+	fi
+}
