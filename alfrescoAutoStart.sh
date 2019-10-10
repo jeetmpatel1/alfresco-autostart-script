@@ -162,3 +162,16 @@ validateHttpdService()
 			fi
 	fi
  }
+ 
+## If clamd and mount mapped then only go ahead
+##PHASE-1
+logger "############# Stating script ###################################"
+logger "Validate clamd and mount point condition"
+
+## removing netstat log file if exist
+if [ -f $tmp_netstat ]
+then
+	logger "existing file "$tmp_netstat" removed"
+    rm $tmp_netstat
+fi
+
