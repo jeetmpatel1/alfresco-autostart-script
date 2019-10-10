@@ -107,3 +107,71 @@ renameCatalina()
    mv $file_name $new_filename
 }
 ## get alfresco version running
+
+
+validateViaCurl()
+{
+	if isTomcatRunning
+	then
+			logger "if tomcat service is ON then go ahead with curl check"
+			logger "value of curlAlfresco check "$curlUrlAlfresco
+			if [ $curlUrlAlfresco == 200 ]
+			then
+				logger "validation successful via curl with response "$curlUrlAlfresco""
+				logger "Alfresco tomcat server started successfully. "
+				exit
+			else
+				logger "validation via curl failed with response "$curlUrlAlfresco" please validate host "$(hostname)" manually"
+				#echo -e "$alfrescoFailStartCurlMsg" | mail -s "AutoScript:: Initial curl validation failed on Host "$(hostname)" with error code "$curlUrlAlfresco" please validate manually" $mailTO
+			fi
+			logger "############ Initial alfresco start script execution completed ##############"
+	else
+
+			logger "### seems tomcat process down or not validated."
+			exit
+	fi
+	
+	
+}
+
+## function validate apache
+validateHttpdService()
+{
+	
+	if isTomcatRunning
+	then
+			# Tomcat is running but checking llawp
+			if ! isLLAWPRunning
+			then
+			     logger "seems LLAWP not running so trying to start ..."
+				startOsBasedApache
+				logger "Tomcat and LLAWP both running...no action to take.. script exit"
+				
+			else
+				
+				if isLLAWPRunning
+				then 
+						logger " httpd (LLAWP) works fine, nothing to do script exited"
+						
+				else
+						logger "script detected that it face issues while making LLAWP up, please confirm it manually for Host "$(hostname)""
+						echo -e "$httpdFailMsg" | mail -s "AutoScript:: Process either 'LLAWP' or 'httpd' failed for Host "$(hostname)""  $mailTO
+						exit
+				fi				
+				
+			fi
+	fi
+ }
+ 
+## If clamd and mount mapped then only go ahead
+##PHASE-1
+logger "############# Stating script ###################################"
+logger "Validate clamd and mount point condition"
+
+## removing netstat log file if exist
+if [ -f $tmp_netstat ]
+then
+	logger "existing file "$tmp_netstat" removed"
+    rm $tmp_netstat
+fi
+
