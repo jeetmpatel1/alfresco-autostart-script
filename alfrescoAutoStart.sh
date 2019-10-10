@@ -107,3 +107,46 @@ renameCatalina()
    mv $file_name $new_filename
 }
 ## get alfresco version running
+
+## get top 10 errors encounters and email it
+sendErrorIfAny()
+{
+	## wait 5 second before sending email
+	sleep 5
+	errors= grep -i -C 1 'ERROR\|SEVERE' $catalinaPath | awk '{print $0,"\n"}'  | mail -s "Autoscript:: Host "$(hostname)" started with mentioned ERROR information" $mailTO
+}
+
+startOsBasedApache()
+{
+	if [ $major_version == 6 ]
+	then
+		logger "you are using redhat "$major_version" so starting using /usr/sbin/apachectl start"
+		$httpdStartPath start
+	elif [ $major_version == 7 ]
+	then
+		logger "you are using redhat "$major_version" so starting using sudo /usr/sbin/apachectl start"
+		sudo $httpdStartPath start
+		haltForSeconds 10
+	else
+		logger "script not able to get OS version and hence not able to judge the way to start apachectl "
+		#echo -e "$httpdFailMsg"| mail -s "AutoScript:: Process either 'LLAWP' or 'httpd' failed to start for Host "$(hostname)""  $mailTO
+	fi
+}
+
+## LOGGER
+logger()
+{
+	stamp=$(date "+%Y-%m-%d_%H%M")
+	printf "$stamp %s\n" "$*" >> "$Logfile"
+}
+## Validate OS version
+#function RHELVersion()
+#{
+#	rpm -q --queryformat '%{RELEASE}' rpm | grep -o [[:digit:]]*\$
+#}
+
+haltForSeconds()
+{
+	logger "halt for "$1" seconds inititated"
+	sleep $1
+}
