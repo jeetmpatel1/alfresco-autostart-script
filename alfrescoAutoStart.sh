@@ -150,3 +150,127 @@ haltForSeconds()
 	logger "halt for "$1" seconds inititated"
 	sleep $1
 }
+
+
+if isClamdRunning && isMountOK
+then
+				logger "Process 'clamd' success"
+				logger "Mount is success"
+				
+				if isTomcatRunning
+				then
+							### This phase will validate that tomcat process is running but alfresco having some issue being up or any error are there
+							### So based on curl response we will validate process running on port 8080 will make sense or not
+							logger "tomcat process appear to be running, now validating via curl"
+							logger "value of curlUrlAlfresco is  $curlUrlAlfresco"
+							if [ $curlUrlAlfresco == 200 ]
+							then
+									logger "Curl alfresco validates application alfresco with response code 200"
+									logger "now checking httpd process"
+									
+									validateHttpdService
+									
+									logger "Attempt for httpd service check completed, script exited"
+									#echo -e "$alfrescoSuccessStartCurlMsg" | mail -s "AutoScript:: Curl validation successfull on Host "$(hostname)" and app server runs fine." $mailTO
+																	
+									logger "#### now checking actual running alfresco and expected alfresco"
+									
+									logger "Found tomcat already running with alfresco ->" $actualAlfrescoRunning
+									if [ "$actualAlfrescoRunning" != "$expectedAlfrescoProcess" ]
+									then
+											logger "Defined alfresco version and actual version running are different please cross check manually and stop current running alfresco , Script exited with no further action - triggering email"
+											echo -e "$emailBodyOtherAlfrescoProcessDetected" | mail -s "AutoScript:: Other alfresco already running on Host "$(hostname)" with different version please validate manually" $mailTO
+											exit
+									else
+											logger "expected alfresco "$actualAlfrescoRunning  " running"
+											logger "validate if httpd(LLAWP) running or not"
+											if isLLAWPRunning
+											then
+												#logger "detected LLAWP is OFF"
+												validateHttpdService
+												logger "Attempt to start service 'httpd' done"
+												exit
+											else
+												logger "Detected LLAWP(httpd) service already running"
+												logger "Script execution ends & no action to take"
+												exit
+											fi
+									fi	
+											
+							else
+									logger "Curl alfresco validated and responded with code "$curlUrlAlfresco" so there is some issue and application is not up successfully"
+									logger "please validate host "$(hostname)" manually for reason, script exited"
+									echo -e "$alfrescoFailStartCurlMsg" | mail -s "AutoScript:: Curl validation failed on Host "$(hostname)" please validate manually" $mailTO
+								    exit
+							fi
+							
+							
+						
+				else
+
+						logger "Alfresco process not running so, Alfresco tomcat need to start ...."
+						logger "proceed to rename catalina.out log file"
+						
+						renameCatalina
+						
+						logger "catalina.out renamed successfully."
+						logger "Initiate Starting alfresco.."
+						
+						##########  ALFRESCO 4 START ########################
+						#$alfresco4StartPath/startup.sh start
+						######################################################
+						
+						##########  ALFRESCO 5 START ########################
+						$alfrescoHomePath/alfresco.sh start
+						######################################################
+						
+						logger "Reading log to find if server startup successful or not"
+			
+						#tail -f $catalinaPath | while read LINE
+						#do
+						#[[ "${LINE}" == *"Server startup"* ]] && break
+						#echo "$LINE"
+						#done
+						logger "Initiate reading log file catalina.out"
+						   tail -n0 -F $catalinaPath | while read line; 
+						   do
+								if echo $line | grep -q 'Server startup' ; 
+								then
+									pkill -9 -P $$ tail > /dev/null 2>&1
+									break
+								fi
+							done
+											
+						logger "Initial alfresco start post halt or pause for few seconds"
+						haltForSeconds 5
+												
+						if isTomcatRunning
+						then
+						   	   logger "Initial tomcat start happen properly, now validating httpd .."
+							   
+							   validateHttpdService
+							   haltForSeconds 5
+							   						   
+							   logger "Alfresco tomcat server started successfully. triggering success email"
+							   echo -e "$alfrescoStartedMsg" | mail -s "AutoScript:: Alfresco just started successfully for Host"$(hostname)""  $mailTO
+							   haltForSeconds 5
+							   logger "Sending error information via email"
+							   sendErrorIfAny
+							   logger "script execution completed successfully."
+							   exit
+						else
+							logger "Initial tomcat start did not happen properly.."
+							echo -e "$alfrescoStartFailedMsg" | mail -s "AutoScript:: Script failed to start Tomcat App on Host "$(hostname)""  $mailTO
+						fi	
+						
+						
+				fi
+			
+		
+else
+		logger "'clamd' or 'mount' Failed - sending Email"
+		logger "Process 'clamd' and necessary 'mount' Failed - executing email action"
+		echo "clamd or mount failed for host "$(hostname)" ..  sending email"
+		echo -e "$emailBodyClamdMountFail" | mail -s "AutoScript:: Process either 'clamd' or 'mount' failed for Host "$(hostname)""  $mailTO
+fi
+ 
