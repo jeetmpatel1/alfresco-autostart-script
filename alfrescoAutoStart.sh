@@ -108,7 +108,7 @@ renameCatalina()
 }
 ## get alfresco version running
 
-<<<<<<< HEAD
+
 ## get top 10 errors encounters and email it
 sendErrorIfAny()
 {
